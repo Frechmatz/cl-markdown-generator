@@ -3,6 +3,7 @@
 
 (defparameter *TAB* "    ")
 
+(defvar *MARKDOWN-OUTPUT* nil)
 
 ;;
 ;; Holds the global status of the document
@@ -11,8 +12,6 @@
 ;; - etc.
 ;; The document-printer exists on compilation time
 ;;
-
-(defvar *MARKDOWN-OUTPUT* nil)
 (defvar *DOCUMENT-PRINTER* nil)
 
 
@@ -151,15 +150,24 @@
 ;;
 
 (defun opcode-h1 (compiler-context &rest args)
-  (declare (optimize (debug 3) (speed 0) (space 0)))
+  ;; (declare (optimize (debug 3) (speed 0) (space 0)))
   (add-blank-line-operation compiler-context)
   (add-text-operation compiler-context "# ")
   (apply #'process-form compiler-context args)
   (add-blank-line-operation compiler-context))
 
+(defun opcode-em (compiler-context &rest args)
+  (add-text-operation compiler-context "*")
+  (apply #'process-form compiler-context args)
+  (add-text-operation compiler-context "*"))
+  
+(defun opcode-strong (compiler-context &rest args)
+  (add-text-operation compiler-context "**")
+  (apply #'process-form compiler-context args)
+  (add-text-operation compiler-context "**"))
 
-;; todo: set up list context
 (defun opcode-list (compiler-context &rest args)
+  ;; todo: set up list context
   "List is an element that doesn't emit any text nor adds indentation levels
    but creates a new item-count and list-style context"
   (apply #'process-form compiler-context args))
@@ -170,6 +178,18 @@
   (add-text-operation compiler-context "* ")
   (with-indentation compiler-context *TAB* (apply #'process-form compiler-context args))
   (add-linebreak-operation compiler-context))
+
+(defun opcode-codeblock (compiler-context &rest args)
+  (add-blank-line-operation compiler-context)
+  (with-indentation compiler-context *TAB* (apply #'process-form compiler-context args))
+  (add-blank-line-operation compiler-context))
+
+(defun opcode-blockquote (compiler-context &rest args)
+  (add-blank-line-operation compiler-context)
+  (with-indentation compiler-context "> " (apply #'process-form compiler-context args)))
+
+
+
 
 ;;
 ;; Tree-Walker
@@ -200,8 +220,7 @@
 		  (str (&rest body)
 		    `(emit-text *DOCUMENT-PRINTER* ,@body))
 		  (fmt (control-string &rest body)
-		    `(emit-text *DOCUMENT-PRINTER* (format nil ,control-string ,@body)))
-		  )
+		    `(emit-text *DOCUMENT-PRINTER* (format nil ,control-string ,@body))))
 	 ;; generate code and insert it here
 	 ,(apply #'walk-tree body)))))
 
@@ -220,6 +239,4 @@
 
 (test)
 |#
-
-
 

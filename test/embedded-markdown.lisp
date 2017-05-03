@@ -1,3 +1,7 @@
+;;
+;; Tests markdown with embedded lisp code
+;;
+
 (in-package :cl-markdown-generator-test)
 
 

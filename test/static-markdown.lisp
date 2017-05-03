@@ -1,3 +1,7 @@
+;;
+;; Tests static markdown
+;;
+
 (in-package :cl-markdown-generator-test)
 
 
@@ -9,6 +13,15 @@
 	       (cl-markdown-generator:with-markdown-output-to-string
 		   (s)
 		   "Plain text"))))
+
+(define-test test-plain-string-2 ()
+	     ""
+	     (assert-equal 
+	      '("Plain text Plain text2")
+	      (string-to-string-list
+	       (cl-markdown-generator:with-markdown-output-to-string
+		   (s)
+		   "Plain text " "Plain text2"))))
 
 (define-test test-header-one-header ()
 	     ""
@@ -51,4 +64,62 @@
 					     (:list-item "Item 1.2")))
 			  (:list-item "Item 2"))))))
 
+
+(define-test test-em ()
+	     ""
+	     (assert-equal 
+	      '("Text *em text*")
+	      (string-to-string-list
+	       (cl-markdown-generator:with-markdown-output-to-string
+		   (s)
+		 "Text "
+		 (:em "em text")))))
+
+
+(define-test test-strong ()
+	     ""
+	     (assert-equal 
+	      '("**Plain text**")
+	      (string-to-string-list
+	       (cl-markdown-generator:with-markdown-output-to-string
+		   (s)
+		   (:strong "Plain text")))))
+
+
+(define-test test-codeblock ()
+	     "Test codeblock"
+	     (assert-equal 
+	      '("# Header"
+		""
+		"    cd /"
+		"")
+	      (string-to-string-list
+	       (cl-markdown-generator:with-markdown-output-to-string
+		   (s)
+		 (:h1 "Header") (:codeblock "cd /")))))
+
+(define-test test-blockquote-simple ()
+	     ""
+	     (assert-equal 
+	      '("# Header"
+		""
+		"> Block")
+	      (string-to-string-list
+	       (cl-markdown-generator:with-markdown-output-to-string
+		   (s)
+		 (:h1 "Header") (:blockquote "Block")))))
+
+(define-test test-blockquote-nested ()
+	     ""
+	     (assert-equal 
+	      '("# Header"
+		""
+		"> Block"
+		""
+		"> > Inner Block"
+		)
+	      (string-to-string-list
+	       (cl-markdown-generator:with-markdown-output-to-string
+		   (s)
+		 (:h1 "Header") (:blockquote "Block" (:blockquote "Inner Block"))))))
 
