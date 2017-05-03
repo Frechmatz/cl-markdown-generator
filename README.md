@@ -1,7 +1,7 @@
 # cl-markdown-generator
 A markdown generator written in Common Lisp
 
-Status: Cancelled, due to the following reasons
+Status: **Cancelled**, due to the following reasons
 * justified text: long strings must be splitted into multiple lines to create nice human readable markdown output. This requires a  formatting engine that can handle nested paragraphs etc. I'm not sure if the programming effort is worth it.
 * formatting of (lisp) code blocks.
 
