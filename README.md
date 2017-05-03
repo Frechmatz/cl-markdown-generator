@@ -8,19 +8,19 @@ Status: Cancelled, due to the following reasons
 ## Some working examples
 
     (cl-markdown-generator:with-markdown-output-to-string (s)
-		   (:h1 "Header 1") 
-       (:list 
-           (:list-item "Item 1") 
-           (:list-item "Item 2")))
+        (:h1 "Header 1") 
+        (:list 
+            (:list-item "Item 1") 
+            (:list-item "Item 2")))
        
     (cl-markdown-generator:with-markdown-output-to-string (s)
         (:h1 "Header 1")
         (:list 
-	(:list-item "Item 1"
+            (:list-item "Item 1"
             (:list 
                 (:list-item "Item 1.1")
                 (:list-item "Item 1.2")))
-        (:list-item "Item 2")))
+            (:list-item "Item 2")))
        
     (cl-markdown-generator:with-markdown-output-to-string (s)
         (:h1 "Header 1")
