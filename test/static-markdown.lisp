@@ -123,3 +123,23 @@
 		   (s)
 		 (:h1 "Header") (:blockquote "Block" (:blockquote "Inner Block"))))))
 
+(define-test test-linebreak-1 ()
+	     ""
+	     (assert-equal
+	      '("# Header 1"
+		"Header 1 continued"
+		"")
+	      (string-to-string-list
+	       (cl-markdown-generator:with-markdown-output-to-string (s)
+		   (:h1 "Header 1
+Header 1 continued")))))
+
+(define-test test-linebreak-2 ()
+	     ""
+	     (assert-equal
+	      '("> Quote"
+		"> Quote continued")
+	      (string-to-string-list
+	       (cl-markdown-generator:with-markdown-output-to-string (s)
+		   (:blockquote "Quote
+Quote continued")))))

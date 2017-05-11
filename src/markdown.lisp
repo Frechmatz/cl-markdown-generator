@@ -15,6 +15,21 @@
 (defvar *DOCUMENT-PRINTER* nil)
 
 
+;; Helper function that parses linebreaks and
+;; returns a list of lines in a document-printer friendly format
+(defun split-string (str)
+  (let ((l '()))
+    (with-input-from-string (s str)
+      (loop
+	 (let ((line (read-line s nil t)))
+	   (cond
+	     ((stringp line)
+	      (if (>= (length l) 1)
+		  (push :br l))
+	      (push line l))
+	     (t (return))))))
+    (reverse l)))
+
 (defclass document-printer ()
   ((indentation :initform '())
    (is-new-line :initform t)
@@ -30,13 +45,23 @@
   (dolist (i (slot-value w 'indentation))
     (princ i *MARKDOWN-OUTPUT*)))
 
-(defmethod emit-text ((w document-printer) str)
+(defmethod emit-text-impl ((w document-printer) str)
   (if (slot-value w 'is-new-line)
       (progn
 	(setf (slot-value w 'is-new-line) nil)
 	(setf (slot-value w 'is-blank-line) nil)
 	(emit-indentation w)))
   (princ str *MARKDOWN-OUTPUT*))
+
+(defmethod emit-text ((w document-printer) str)
+  (if (not (stringp str))
+      (emit-text-impl w str)
+      (dolist (s (split-string str))
+	(cond
+	  ((eq :br s)
+	   ;; Multiple linebreaks will be merged into one
+	   (emit-linebreak w))
+	  (t (emit-text-impl w s))))))
 
 (defmethod emit-linebreak ((w document-printer) &optional (force nil))
   (if (or force (not (slot-value w 'is-new-line)))
@@ -149,10 +174,24 @@
 ;; Opcodes
 ;;
 
+(defun opcode-paragraph (compiler-context &rest args)
+  ;; (declare (optimize (debug 3) (speed 0) (space 0)))
+  (add-blank-line-operation compiler-context)
+  (apply #'process-form compiler-context args)
+  (add-blank-line-operation compiler-context))
+
 (defun opcode-h1 (compiler-context &rest args)
   ;; (declare (optimize (debug 3) (speed 0) (space 0)))
   (add-blank-line-operation compiler-context)
   (add-text-operation compiler-context "# ")
+  (apply #'process-form compiler-context args)
+  (add-blank-line-operation compiler-context))
+
+;; todo: create hX helper function
+(defun opcode-h2 (compiler-context &rest args)
+  ;; (declare (optimize (debug 3) (speed 0) (space 0)))
+  (add-blank-line-operation compiler-context)
+  (add-text-operation compiler-context "## ")
   (apply #'process-form compiler-context args)
   (add-blank-line-operation compiler-context))
 
@@ -240,3 +279,6 @@
 (test)
 |#
 
+;;(cl-markdown-generator::split-string "Olli
+;;hat nen dicken
+;;Bauch")
