@@ -115,7 +115,7 @@
 	      '("# Header"
 		""
 		"> Block"
-		""
+		"> "
 		"> > Inner Block"
 		)
 	      (string-to-string-list

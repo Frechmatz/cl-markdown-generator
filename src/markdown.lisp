@@ -14,22 +14,6 @@
 ;;
 (defvar *DOCUMENT-PRINTER* nil)
 
-
-;; Helper function that parses linebreaks and
-;; returns a list of lines in a document-printer friendly format
-(defun split-string (str)
-  (let ((l '()))
-    (with-input-from-string (s str)
-      (loop
-	 (let ((line (read-line s nil t)))
-	   (cond
-	     ((stringp line)
-	      (if (>= (length l) 1)
-		  (push :br l))
-	      (push line l))
-	     (t (return))))))
-    (reverse l)))
-
 (defclass document-printer ()
   ((indentation :initform '())
    (is-new-line :initform t)
@@ -42,7 +26,7 @@
   (pop (slot-value w 'indentation)))
 
 (defmethod emit-indentation ((w document-printer))
-  (dolist (i (slot-value w 'indentation))
+  (dolist (i (reverse (slot-value w 'indentation)))
     (princ i *MARKDOWN-OUTPUT*)))
 
 (defmethod emit-text-impl ((w document-printer) str)
@@ -54,14 +38,26 @@
   (princ str *MARKDOWN-OUTPUT*))
 
 (defmethod emit-text ((w document-printer) str)
-  (if (not (stringp str))
-      (emit-text-impl w str)
-      (dolist (s (split-string str))
-	(cond
-	  ((eq :br s)
-	   ;; Multiple linebreaks will be merged into one
-	   (emit-linebreak w))
-	  (t (emit-text-impl w s))))))
+  (flet ((split-string (str)
+	   (let ((l '()))
+	     (with-input-from-string (s str)
+	       (loop
+		  (let ((line (read-line s nil t)))
+		    (cond
+		      ((stringp line)
+		       (if (>= (length l) 1)
+			   (push :br l))
+	      (push line l))
+		      (t (return))))))
+	     (reverse l))))
+    (if (not (stringp str))
+	(emit-text-impl w str)
+	(dolist (s (split-string str))
+	  (cond
+	    ((eq :br s)
+	     ;; Multiple linebreaks will be merged into one
+	     (emit-linebreak w))
+	    (t (emit-text-impl w s)))))))
 
 (defmethod emit-linebreak ((w document-printer) &optional (force nil))
   (if (or force (not (slot-value w 'is-new-line)))
@@ -73,6 +69,7 @@
   (if (not (slot-value w 'is-blank-line))
       (progn
 	(emit-linebreak w)
+	(emit-indentation w)
 	(emit-linebreak w t)
 	(setf (slot-value w 'is-blank-line) t))))
 
@@ -154,7 +151,6 @@
        (add-text-operation compiler-context arg))
       ((and (listp arg) (keywordp (first arg)))
        (call-opcode-handler (first arg) compiler-context (rest arg)))
-      ;; todo: Handle code and other forms
       ((listp arg)
        (add-code-operation compiler-context arg))
       (t (error (format nil "Markdown error: Cannot handle input: ~a" arg))))))
@@ -175,13 +171,11 @@
 ;;
 
 (defun opcode-paragraph (compiler-context &rest args)
-  ;; (declare (optimize (debug 3) (speed 0) (space 0)))
   (add-blank-line-operation compiler-context)
   (apply #'process-form compiler-context args)
   (add-blank-line-operation compiler-context))
 
 (defun opcode-h1 (compiler-context &rest args)
-  ;; (declare (optimize (debug 3) (speed 0) (space 0)))
   (add-blank-line-operation compiler-context)
   (add-text-operation compiler-context "# ")
   (apply #'process-form compiler-context args)
@@ -189,7 +183,6 @@
 
 ;; todo: create hX helper function
 (defun opcode-h2 (compiler-context &rest args)
-  ;; (declare (optimize (debug 3) (speed 0) (space 0)))
   (add-blank-line-operation compiler-context)
   (add-text-operation compiler-context "## ")
   (apply #'process-form compiler-context args)
@@ -227,9 +220,6 @@
   (add-blank-line-operation compiler-context)
   (with-indentation compiler-context "> " (apply #'process-form compiler-context args)))
 
-
-
-
 ;;
 ;; Tree-Walker
 ;;
@@ -248,13 +238,11 @@
 ;;
 
 (defmacro with-markdown-output ((stream) &rest body)
-  ;;(declare (optimize (debug 3) (speed 0) (space 0)))
   `(let ((*MARKDOWN-OUTPUT* ,stream))
      ;; create a document-printer. the generated code consists
      ;; of calls against the document printer
      (let ((*DOCUMENT-PRINTER* (make-instance 'document-printer)))
        (macrolet ((markdown (&rest body)
-		    ;;(declare (optimize (debug 3) (speed 0) (space 0)))
 		    (apply #'walk-tree body))
 		  (str (&rest body)
 		    `(emit-text *DOCUMENT-PRINTER* ,@body))
@@ -279,6 +267,3 @@
 (test)
 |#
 
-;;(cl-markdown-generator::split-string "Olli
-;;hat nen dicken
-;;Bauch")
