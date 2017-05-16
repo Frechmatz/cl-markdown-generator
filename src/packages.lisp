@@ -1,5 +1,6 @@
 
 (defpackage :cl-markdown-generator
+  (:nicknames #:md)
   (:use :cl)
   (:export :markdown)
   (:export :str)
